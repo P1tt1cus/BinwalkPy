@@ -10,6 +10,6 @@ for result in results:
     print(result)
 
 # Test file extraction
-results = binwalkpy.extract(file_path, include=["png", "html"], full_search=True)
+results = binwalkpy.extract(file_path, include=["gzip"], full_search=True)
 for extract_result in results:
     print(extract_result)

@@ -1,7 +1,7 @@
 import os
 import binwalkpy
 
-file_path = os.path.abspath("./MR90-V1.0.2.38_1.0.38.chk")
+file_path = os.path.abspath("./image")
 output_path = os.path.abspath("./extracted")
 
 # Test file scanning

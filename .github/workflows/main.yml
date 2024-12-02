@@ -37,7 +37,7 @@ jobs:
     - name: Publish to PyPI
       env:
         MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_KEY }}
-      run: maturin publish --skip-existing dist/*.whl
+      run: maturin publish --skip-existing
 
   build-windows:
     runs-on: windows-latest
@@ -65,4 +65,4 @@ jobs:
     - name: Publish to PyPI
       env:
         MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_KEY }}
-      run: maturin publish --skip-existing dist/*.whl
+      run: maturin publish --skip-existing

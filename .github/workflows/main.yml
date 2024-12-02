@@ -11,6 +11,7 @@ on:
       - closed
 
 jobs:
+
   build-linux:
     runs-on: ubuntu-latest
     steps:
@@ -34,13 +35,11 @@ jobs:
     - name: Build the package
       run: maturin build --release --out dist/
 
-    - name: Upload wheel
-      uses: actions/upload-artifact@v4
-      with:
-        name: linux-wheel
-        path: dist/*.whl
+    - name: Build the package
+      run: maturin build --release --out dist/
 
   build-windows:
+
     runs-on: windows-latest
     steps:
     - name: Check out the repository
@@ -62,49 +61,3 @@ jobs:
 
     - name: Build the package
       run: maturin build --release --out dist/
-
-    - name: Upload wheel
-      uses: actions/upload-artifact@v4
-      with:
-        name: windows-wheel
-        path: dist/*.whl
-
-  publish:
-    if: github.ref == 'refs/heads/main'
-    needs: [build-linux, build-windows]
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Check out the repository
-      uses: actions/checkout@v2
-
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.12'
-
-    - name: Set up Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        override: true
-
-    - name: Install maturin
-      run: pip install maturin
-
-    - name: Download Linux wheel
-      uses: actions/download-artifact@v4
-      with:
-        name: linux-wheel
-        path: dist/
-
-    - name: Download Windows wheel
-      uses: actions/download-artifact@v4
-      with:
-        name: windows-wheel
-        path: dist/
-
-    - name: Publish to PyPI
-      env:
-        MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_KEY }}
-      run: maturin publish --skip-existing dist/*.whl

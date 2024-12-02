@@ -35,7 +35,7 @@ jobs:
       run: maturin build --release --out dist/
 
     - name: Upload wheel
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: linux-wheel
         path: dist/*.whl
@@ -64,7 +64,7 @@ jobs:
       run: maturin build --release --out dist/
 
     - name: Upload wheel
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: windows-wheel
         path: dist/*.whl
@@ -93,13 +93,13 @@ jobs:
       run: pip install maturin
 
     - name: Download Linux wheel
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v4
       with:
         name: linux-wheel
         path: dist/
 
     - name: Download Windows wheel
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v4
       with:
         name: windows-wheel
         path: dist/

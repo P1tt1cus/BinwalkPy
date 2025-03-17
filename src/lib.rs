@@ -4,28 +4,31 @@ use pyo3::prelude::*;
 use std::collections::HashMap;
 use std::path::Path;
 
-// pub fn configure(
-//     target_file_name: Option<String>,
-//     output_directory: Option<String>,
-//     include: Option<Vec<String>>,
-//     exclude: Option<Vec<String>>,
-//     signatures: Option<Vec<signatures::common::Signature>>,
-//     full_search: bool,
-// ) -> Result<Binwalk, BinwalkError>
-
-
-// / // Don't scan for these file signatures
-// / let exclude_filters: Vec<String> = vec!["jpeg".to_string(), "png".to_string()];
-// /
-// / let binwalker = Binwalk::configure(None,
-// /                                    None,
-// /                                    None,
-// /                                    Some(exclude_filters),
-// /                                    None,
-// /                                    false)?;
-
-
+/// Extracts data from a file using Binwalk.
+///
+/// ## Arguments
+///
+/// * `file_path` - The path to the file to be analyzed.
+/// * `output_path` - The directory where extracted files will be saved.
+/// * `include` - Optional list of signatures to include in the analysis.
+/// * `exclude` - Optional list of signatures to exclude from the analysis.
+/// * `full_search` - Optional flag to enable full search mode.
+///
+/// ## Returns
+///
+/// A vector of hash maps containing the extraction results.
+///
+/// ## Example
+///
+/// ```python
+/// from your_project_name import extract
+///
+/// results = extract("path/to/file", "output/directory", None, None, False)
+/// for result in results:
+///     print(result)
+/// ```
 #[pyfunction]
+#[pyo3(signature = (file_path, output_path=None, include=None, exclude=None, full_search=None))]
 fn extract(
     file_path: String,
     output_path: Option<String>,
@@ -34,37 +37,35 @@ fn extract(
     full_search: Option<bool>,
 ) -> PyResult<Vec<HashMap<String, String>>> {
 
-   // Check if input file exists
+    // Check if input file exists
     if !Path::new(&file_path).exists() {
         return Err(PyRuntimeError::new_err("Input file does not exist"));
     }
 
     // Initialize binwalk
     let binwalker = Binwalk::configure(
-        Some(file_path),
-        output_path, // Requires admin privileges due to symbolic links
+        Some(file_path.clone()),
+        output_path,
         include,
         exclude,
         None,
         full_search.unwrap_or(false),
-    )
-    .expect("Failed to configure binwalk");
+    ).map_err(|e| PyRuntimeError::new_err(format!("Binwalk configuration error: {:?}", e)))?;
 
-    // Read the file data
+    // Read the file data so we can pass it to the scan function and extract results
     let file_data = std::fs::read(&binwalker.base_target_file)
         .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
 
-    // Perform scan
     let scan_results = binwalker.scan(&file_data);
 
-    // Perform extraction
+    // The previous scan results can now be passed to the extract function to extract the data
     let extraction_results = binwalker.extract(
         &file_data,
         &binwalker.base_target_file,
         &scan_results,
     );
 
-    // Prepare results
+    // Convert the extraction results to a format that can be returned to Python
     let mut results = Vec::new();
     for (key, value) in extraction_results.iter() {
         let mut result_map = HashMap::new();
@@ -78,14 +79,42 @@ fn extract(
     }
 
     Ok(results)
+
 }
 
+
+/// Scans a file for signatures using Binwalk.
+///
+/// ## Arguments
+///
+/// * `file_path` - The path to the file to be scanned.
+///
+/// ## Returns
+///
+/// A vector of hash maps containing the scan results.
+///
+/// ## Example
+///
+/// ```python
+/// from your_project_name import scan_file
+///
+/// results = scan_file("path/to/file")
+/// for result in results:
+///     print(result)
+/// ```
 #[pyfunction]
 fn scan_file(file_path: &str) -> PyResult<Vec<HashMap<String, String>>> {
 
+    // Check to see whether the input file exists before proceeding
     let file_data = std::fs::read(&Path::new(file_path)).map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+
+    // Create a new Binwalk instance
     let binwalker = Binwalk::new();
+
+    // Define a vector to store the results of the scan
     let mut results = Vec::new();
+
+    // Convert the extraction results to a format that can be returned to Python
     for result in binwalker.scan(&file_data) {
         let mut result_map = HashMap::new();
         result_map.insert("description".to_string(), result.description.clone());
@@ -99,10 +128,8 @@ fn scan_file(file_path: &str) -> PyResult<Vec<HashMap<String, String>>> {
     Ok(results)
 }
 
-
 #[pymodule]
 fn binwalkpy(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    env_logger::init(); 
     m.add_function(wrap_pyfunction!(scan_file, m)?)?;
     m.add_function(wrap_pyfunction!(extract, m)?)?;
     Ok(())
